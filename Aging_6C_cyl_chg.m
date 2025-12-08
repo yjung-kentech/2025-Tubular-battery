@@ -43,7 +43,7 @@ labelYPos      = 1.05;  % 라벨 상하 위치
 ax1 = nexttile(1);
 hold(ax1, 'on'); grid(ax1, 'off'); box(ax1, 'on');
 ylabel(ax1, 'Voltage [V]', 'FontSize', yLabelFontSize);
-xlabel(ax1, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax1, 'Charging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax1, 'FontSize', axisFontSize, 'LineWidth', 1);
 % 라벨 (a)
 text(ax1, labelXPos, labelYPos, 'a', 'Units', 'normalized', ...
@@ -53,7 +53,7 @@ text(ax1, labelXPos, labelYPos, 'a', 'Units', 'normalized', ...
 ax2 = nexttile(2);
 hold(ax2, 'on'); grid(ax2, 'off'); box(ax2, 'on');
 ylabel(ax2, 'C-rate', 'FontSize', yLabelFontSize);
-xlabel(ax2, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax2, 'Charging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax2, 'FontSize', axisFontSize, 'LineWidth', 1);
 % 라벨 (c)
 text(ax2, labelXPos, labelYPos, 'c', 'Units', 'normalized', ...
@@ -63,7 +63,7 @@ text(ax2, labelXPos, labelYPos, 'c', 'Units', 'normalized', ...
 ax3 = nexttile(3);
 hold(ax3, 'on'); grid(ax3, 'off'); box(ax3, 'on');
 ylabel(ax3, 'T_{max} [°C]', 'FontSize', yLabelFontSize);
-xlabel(ax3, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax3, 'Charging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax3, 'FontSize', axisFontSize, 'LineWidth', 1);
 % 라벨 (e)
 text(ax3, labelXPos, labelYPos, 'e', 'Units', 'normalized', ...
@@ -73,7 +73,7 @@ text(ax3, labelXPos, labelYPos, 'e', 'Units', 'normalized', ...
 ax4 = nexttile(4);
 hold(ax4, 'on'); grid(ax4, 'off'); box(ax4, 'on');
 ylabel(ax4, 'T_{avg} [°C]', 'FontSize', yLabelFontSize);
-xlabel(ax4, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax4, 'Charging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax4, 'FontSize', axisFontSize, 'LineWidth', 1);
 % 라벨 (g)
 text(ax4, labelXPos, labelYPos, 'g', 'Units', 'normalized', ...
@@ -102,7 +102,7 @@ for k = 1:n_dset
                'if(comp2.I_cell<0, -comp2.I_cell/I_1C_2D, NaN) + ' ...
                'if(comp3.I_cell<0, -comp3.I_cell/I_1C_2D, NaN))/3'];
            
-    expr_Tmax = '((comp1.T_max + comp2.T_max + comp3.T_max)/3) - 273.15';
+    expr_Tmax = 'max(max(comp1.T_max, comp2.T_max), comp3.T_max) - 273.15';
     expr_Tavg = '((comp1.T_avg + comp2.T_avg + comp3.T_avg)/3) - 273.15';
 
     % (3) 데이터 가져오기

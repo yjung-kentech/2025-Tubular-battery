@@ -41,7 +41,7 @@ labelYPos      = 1.05;
 ax1 = nexttile(1);
 hold(ax1, 'on'); grid(ax1, 'off'); box(ax1, 'on');
 ylabel(ax1, 'Voltage [V]', 'FontSize', yLabelFontSize);
-xlabel(ax1, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax1, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax1, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax1, labelXPos, labelYPos, 'b', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -50,7 +50,7 @@ text(ax1, labelXPos, labelYPos, 'b', 'Units', 'normalized', ...
 ax2 = nexttile(2);
 hold(ax2, 'on'); grid(ax2, 'off'); box(ax2, 'on');
 ylabel(ax2, 'C-rate', 'FontSize', yLabelFontSize);
-xlabel(ax2, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax2, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax2, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax2, labelXPos, labelYPos, 'd', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -59,7 +59,7 @@ text(ax2, labelXPos, labelYPos, 'd', 'Units', 'normalized', ...
 ax3 = nexttile(3);
 hold(ax3, 'on'); grid(ax3, 'off'); box(ax3, 'on');
 ylabel(ax3, 'T_{max} [°C]', 'FontSize', yLabelFontSize);
-xlabel(ax3, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax3, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax3, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax3, labelXPos, labelYPos, 'f', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -68,7 +68,7 @@ text(ax3, labelXPos, labelYPos, 'f', 'Units', 'normalized', ...
 ax4 = nexttile(4);
 hold(ax4, 'on'); grid(ax4, 'off'); box(ax4, 'on');
 ylabel(ax4, 'T_{avg} [°C]', 'FontSize', yLabelFontSize);
-xlabel(ax4, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax4, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax4, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax4, labelXPos, labelYPos, 'h', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -95,7 +95,7 @@ for k = 1:n_dset
     % C-rate: -I/I_1C_2D (위가 충전, 아래가 방전)
     expr_C = '-(comp1.I_cell + comp2.I_cell + comp3.I_cell)/(3*I_1C_2D)';
            
-    expr_Tmax = '((comp1.T_max + comp2.T_max + comp3.T_max)/3) - 273.15';
+    expr_Tmax = 'max(max(comp1.T_max, comp2.T_max), comp3.T_max) - 273.15';
     expr_Tavg = '((comp1.T_avg + comp2.T_avg + comp3.T_avg)/3) - 273.15';
 
     % (3) 데이터 가져오기
@@ -135,16 +135,17 @@ for k = 1:n_dset
     C_ab  = C_ab(:);
 
     % x축 보정 (좌우 반전 없이, 최소값을 0으로 이동)
-    Q_plot_ab = Q_ab - min(Q_ab);
+    Q_plot_ab = max(Q_ab) - Q_ab;
+    Q_plot_ab = Q_plot_ab - min(Q_plot_ab);
 
     lw  = 1.0;
     col = colors(k,:);
 
     % --- a: Voltage + capacity 최대점에서 4.2 V까지 세로선 ---
     hLeg(k) = plot(ax1, Q_plot_ab, V_ab, '-', 'Color', col, 'LineWidth', lw); hold(ax1,'on');
-    [Q_max_ab, iQmax_ab] = max(Q_plot_ab);
-    V_at_Qmax_ab         = V_ab(iQmax_ab);
-    plot(ax1, [Q_max_ab Q_max_ab], [V_at_Qmax_ab 4.2], '-', 'Color', col, 'LineWidth', lw);
+    [Q0_ab, iQ0_ab] = min(Q_plot_ab);
+    V_at_Q0_ab      = V_ab(iQ0_ab);
+    plot(ax1, [Q0_ab Q0_ab], [V_at_Q0_ab 4.2], '-', 'Color', col, 'LineWidth', lw);
 
     % --- b: C-rate (방전 구간 plateau + 양쪽 세로선 == 0↔-1 포함) ---
     % 시작점에서 C=0을 하나 붙이고, 끝점에서 C=0을 하나 더 붙인다
@@ -173,22 +174,37 @@ for k = 1:n_dset
     Tm_cd = Tm_cd(ia);
     Ta_cd = Ta_cd(ia);
 
-    Q_plot_cd = Q_cd - min(Q_cd);
+    Q_plot_cd = max(Q_cd) - Q_cd;
+    Q_plot_cd = Q_plot_cd - min(Q_plot_cd);
 
     plot(ax3, Q_plot_cd, Tm_cd, '-', 'Color', col, 'LineWidth', lw); hold(ax3,'on');
     plot(ax4, Q_plot_cd, Ta_cd, '-', 'Color', col, 'LineWidth', lw); hold(ax4,'on');
 
+    [Q_max_cd, iQmax_cd] = max(Q_plot_cd);
+
+    Tm_at_Qmax = Tm_cd(iQmax_cd);
+    Ta_at_Qmax = Ta_cd(iQmax_cd);
+
+    % Tmax 세로선
+    plot(ax3, [Q_max_cd Q_max_cd], [25 Tm_at_Qmax], '-', ...
+        'Color', col, 'LineWidth', lw);
+
+    % Tavg 세로선
+    plot(ax4, [Q_max_cd Q_max_cd], [25 Ta_at_Qmax], '-', ...
+        'Color', col, 'LineWidth', lw);
+
 end
 
 % 범례 (맨 위 그래프에만 표시)
-legend(ax1, hLeg, all_labels, 'Location','southeast', 'FontSize', 12);
+% legend(ax1, hLeg, all_labels, 'Location','southeast', 'FontSize', 12);
 
 % 축 동기화 및 범위 설정
 linkaxes([ax1, ax2, ax3, ax4], 'x');
 xlim(ax1, [0 inf]);
 
 ylim(ax1, [3.0 4.2]);
-ylim(ax3, [25 32]);
+ylim(ax2, [0 7]);
+ylim(ax3, [25 35]);
 ylim(ax4, [25 30]);
 ylim(ax2, [-2 0]);   % 필요하면 조절
 

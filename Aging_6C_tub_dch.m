@@ -43,7 +43,7 @@ labelYPos      = 1.05;
 ax1 = nexttile(1);
 hold(ax1, 'on'); grid(ax1, 'off'); box(ax1, 'on');
 ylabel(ax1, 'Voltage [V]', 'FontSize', yLabelFontSize);
-xlabel(ax1, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax1, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax1, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax1, labelXPos, labelYPos, 'b', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -52,7 +52,7 @@ text(ax1, labelXPos, labelYPos, 'b', 'Units', 'normalized', ...
 ax2 = nexttile(2);
 hold(ax2, 'on'); grid(ax2, 'off'); box(ax2, 'on');
 ylabel(ax2, 'C-rate', 'FontSize', yLabelFontSize);
-xlabel(ax2, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax2, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax2, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax2, labelXPos, labelYPos, 'd', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -61,7 +61,7 @@ text(ax2, labelXPos, labelYPos, 'd', 'Units', 'normalized', ...
 ax3 = nexttile(3);
 hold(ax3, 'on'); grid(ax3, 'off'); box(ax3, 'on');
 ylabel(ax3, 'T_{max} [°C]', 'FontSize', yLabelFontSize);
-xlabel(ax3, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax3, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax3, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax3, labelXPos, labelYPos, 'f', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -70,7 +70,7 @@ text(ax3, labelXPos, labelYPos, 'f', 'Units', 'normalized', ...
 ax4 = nexttile(4);
 hold(ax4, 'on'); grid(ax4, 'off'); box(ax4, 'on');
 ylabel(ax4, 'T_{avg} [°C]', 'FontSize', yLabelFontSize);
-xlabel(ax4, 'Capacity [Ah]', 'FontSize', xLabelFontSize);
+xlabel(ax4, 'Discharging capacity [Ah]', 'FontSize', xLabelFontSize);
 set(ax4, 'FontSize', axisFontSize, 'LineWidth', 1);
 text(ax4, labelXPos, labelYPos, 'h', 'Units', 'normalized', ...
     'FontSize', labelFontSize, 'FontWeight', 'bold');
@@ -94,7 +94,7 @@ for k = 1:n_dset
     
     expr_V = '(comp1.E_cell + comp2.E_cell + comp3.E_cell)/3';
     
-    % C-rate: -I/I_1C_2D (위가 충전, 아래가 방전)
+    % C-rate: -I/I_1C_2D  (방전 플롯용)
     expr_C = '-(comp1.I_cell + comp2.I_cell + comp3.I_cell)/(3*I_1C_2D)';
            
     expr_Tmax = '((comp1.T_max + comp2.T_max + comp3.T_max)/3) - 273.15';
@@ -129,7 +129,7 @@ for k = 1:n_dset
     if isempty(idx_dis_rel)
         continue;
     end
-    idx_dis = idx_after(idx_dis_rel);   % 실제 인덱스
+    idx_dis = idx_after(idx_dis_rel);
 
     % 이 인덱스를 네 패널 모두에서 사용
     Q_dis  = Q_raw(idx_dis);
@@ -144,8 +144,11 @@ for k = 1:n_dset
     Tm_dis = Tm_dis(:);
     Ta_dis = Ta_dis(:);
 
-    % x축 보정 (방전 구간 최소값을 0으로 이동)
-    Q_plot = Q_dis - min(Q_dis);
+    % ==========================================
+    % [핵심] 좌우반전 + 0Ah 정렬
+    % ==========================================
+    Q_plot = max(Q_dis) - Q_dis;
+    Q_plot = Q_plot - min(Q_plot);
     Q_plot = Q_plot(:);
 
     if numel(Q_plot) < 2
@@ -155,46 +158,51 @@ for k = 1:n_dset
     lw  = 1.0;
     col = colors(k,:);
 
-    % --- (1) Voltage + capacity 최대점에서 4.2 V까지 세로선 ---
+    % --- (1) Voltage: 방전 곡선 ---
     hLine = plot(ax1, Q_plot, V_dis, '-', 'Color', col, 'LineWidth', lw); hold(ax1,'on');
-    [Q_max_ab, iQmax_ab] = max(Q_plot);
-    V_at_Qmax_ab         = V_dis(iQmax_ab);
-    plot(ax1, [Q_max_ab Q_max_ab], [V_at_Qmax_ab 4.2], '-', 'Color', col, 'LineWidth', lw);
+
+    % ==========================================
+    % [핵심] a번 세로선: 0Ah에서 시작 전압 → 4.2V
+    % ==========================================
+    [Q0, iQ0] = min(Q_plot);
+    V_at_Q0   = V_dis(iQ0);
+    plot(ax1, [Q0 Q0], [V_at_Q0 4.2], '-', 'Color', col, 'LineWidth', lw);
 
     % legend용
     hLeg(end+1,1)      = hLine;
     legLabels{end+1,1} = all_labels{k};
 
-    % --- (2) C-rate (방전 plateau + 양쪽 세로선, 0↔-1 포함) ---
+    % --- (2) C-rate (방전 plateau + 양쪽 세로선) ---
     Q_b = [Q_plot(1); Q_plot; Q_plot(end)];
     C_b = [0;         C_dis;  0         ];
     plot(ax2, Q_b, C_b, '-', 'Color', col, 'LineWidth', lw); hold(ax2,'on');
 
-    % ============================
-    % (3)(4) 온도: 세로선 + 원래 방전 곡선
-    %   (0Ah, 25°C) -> (0Ah, T_start) -> (Q_plot, T_dis)
-    % ============================
+    % ==========================================
+    % (3)(4) 온도: Q_max(방전 capacity 최대점)에서
+    %            해당 온도값 → 25°C까지 세로선
+    % ==========================================
+    T0 = 25;
 
-    T0 = 25;                    % 시작 온도 (25°C로 고정)
+    % 온도 곡선
+    plot(ax3, Q_plot, Tm_dis, '-', 'Color', col, 'LineWidth', lw); hold(ax3,'on');
+    plot(ax4, Q_plot, Ta_dis, '-', 'Color', col, 'LineWidth', lw); hold(ax4,'on');
 
-    % "시작점"을 방전 구간의 최대 온도로 잡기 (plateau 높이까지 세로선)
-    T_start_m = max(Tm_dis);    % 해당 사이클 방전 동안의 최대 T_max
-    T_start_a = max(Ta_dis);    % 해당 사이클 방전 동안의 최대 T_avg
+    % 방전 capacity 최대점
+    [Q_max, iQmax] = max(Q_plot);
 
-    % (3) T_max : 세로선 + 원래 곡선
-    plot(ax3, [0 0], [T0 T_start_m], '-', 'Color', col, 'LineWidth', lw); hold(ax3,'on');
-    plot(ax3, Q_plot, Tm_dis, '-', 'Color', col, 'LineWidth', lw);
+    Tm_at_Qmax = Tm_dis(iQmax);
+    Ta_at_Qmax = Ta_dis(iQmax);
 
-    % (4) T_avg : 세로선 + 원래 곡선
-    plot(ax4, [0 0], [T0 T_start_a], '-', 'Color', col, 'LineWidth', lw); hold(ax4,'on');
-    plot(ax4, Q_plot, Ta_dis, '-', 'Color', col, 'LineWidth', lw);
+    % 세로선
+    plot(ax3, [Q_max Q_max], [T0 Tm_at_Qmax], '-', 'Color', col, 'LineWidth', lw);
+    plot(ax4, [Q_max Q_max], [T0 Ta_at_Qmax], '-', 'Color', col, 'LineWidth', lw);
 
 end
 
 % 범례
-if ~isempty(hLeg)
-    legend(ax1, hLeg, legLabels, 'Location','southeast', 'FontSize', 12);
-end
+% if ~isempty(hLeg)
+%     legend(ax1, hLeg, legLabels, 'Location','southeast', 'FontSize', 12);
+% end
 
 % 축 동기화 및 범위 설정
 linkaxes([ax1, ax2, ax3, ax4], 'x');
@@ -203,6 +211,8 @@ xlim(ax1, [0 inf]);
 ylim(ax1, [3.0 4.2]);
 ylim(ax3, [25 28]);
 ylim(ax4, [25 27]);
+
+% 방전 C-rate 축(하나만 남김)
 ylim(ax2, [-2 0]);
 
 %% 6. 이미지 저장
