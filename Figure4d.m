@@ -42,8 +42,8 @@ for i = 1:length(R_out_values)
 end
 
 %% Charging Time (Cylinder)
-data_dir = 'C:\Users\user\Desktop\Figure\Sweep\mat 파일';
-cylinder_file = fullfile(data_dir, 'Cylinder_Sweep_Crate_Rout.mat');
+data_dir = 'C:\Users\user\Desktop\새figure\mat 파일';
+cylinder_file = fullfile(data_dir, 'Cylinder_Sweep_Crate_Rout_.mat');
 
 load(cylinder_file);
 cylinder_data = data;
@@ -108,9 +108,9 @@ end
 
 
 %% Charging Time (Tubular)
-data_dir = 'C:\Users\user\Desktop\Figure\Sweep\mat 파일';
+data_dir = 'C:\Users\user\Desktop\새figure\mat 파일';
 file1 = fullfile(data_dir, 'Tubular_Sweep_Crate_Rin_46.mat');
-file2 = fullfile(data_dir, 'Tubular_Sweep_Crate_Rin_60.mat');
+file2 = fullfile(data_dir, 'Tubular_Sweep_Crate_Rin_60_.mat');
 file3 = fullfile(data_dir, 'Tubular_Sweep_Crate_Rin_80.mat');
 
 load(file1);
@@ -312,7 +312,7 @@ fig = gcf;
 set(fig, 'Position', [100, 100, 560, 420]);
 
 % figure 저장
-figure_save_dir = 'C:\Users\user\Desktop\Figure\Figure 4\png 파일';
+figure_save_dir = 'C:\Users\user\Desktop\새figure\png';
 if ~exist(figure_save_dir, 'dir')
     mkdir(figure_save_dir);
 end
@@ -320,7 +320,7 @@ figure_save_path = fullfile(figure_save_dir, 'figure4d_new.png');
 exportgraphics(gcf, figure_save_path, 'Resolution', 300);
 
 %% 중간 데이터 저장
-save_dir = 'C:\Users\user\Desktop\Figure\Figure 4\중간 데이터';
+save_dir = 'C:\Users\user\Desktop\새figure\중간데이터';
 
 inter_data = struct();
 
